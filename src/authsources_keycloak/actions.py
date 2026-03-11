@@ -1,21 +1,20 @@
 from authsources.abc import source, actions
-from authsources.abc.identity import User, UserID
-from authsources.json import JSONSchema
 from authsources.abc.protocols import RequestProtocol
+from authsources.json import JSONSchema
+from authsources_keycloak.source import KeycloakUser
 
 
 class Fetch(actions.Getter):
 
     schema = None
 
-    def get(self, request: RequestProtocol, uid: UserID) -> User | None:
+    def get(self, request: RequestProtocol, uid: str) -> KeycloakUser | None:
         if kuid := self.source.admin.get_user_id(uid):
             data = self.source.admin.get_user(kuid)
             groups = self.source.admin.get_user_groups(kuid)
             data['groups'] = groups
             user = self.source.usertype(uid, data=data)
             return user
-
 
 
 class Preflight(actions.Preflight):
@@ -84,7 +83,7 @@ class Challenge(actions.Challenge):
         "required": ["username", "password"]
     })
 
-    def challenge(self, credentials: dict) -> User | None:
+    def challenge(self, credentials: dict) -> KeycloakUser | None:
         errors = list(self.schema.validate(credentials))
         if errors:
             # FixMe
@@ -157,7 +156,7 @@ class Update(actions.Update):
         "required": ["email"],
     })
 
-    def update(self, uid: UserID, data: dict) -> bool:
+    def update(self, uid: str, data: dict) -> bool:
         errors = list(self.schema.validate(data))
         if errors:
             # FixMe
@@ -176,7 +175,7 @@ class Delete(actions.Delete):
 
     schema = None
 
-    def delete(self, uid: UserID) -> bool:
+    def delete(self, uid: str) -> bool:
         if kuid := self.source.admin.get_user_id(uid):
             self.source.admin.delete_user(user_id=kuid)
             return True
@@ -191,7 +190,7 @@ class Groups(actions.Groups):
         raise NotImplementedError('Not YET')
 
     @abc.abstractmethod
-    def list_user_groups(self, userid: UserID):
+    def list_user_groups(self, userid: str):
         kuid = self.source.admin.get_user_id(userid)
         return self.source.admin.get_user_groups(user_id=kuid)
 
@@ -213,7 +212,7 @@ class Group(actions.Group):
                 data=data,
             )
 
-    def add_group_user(self, groupid, userid: UserID):
+    def add_group_user(self, groupid: str, userid: str):
             kuid = self.admin.get_user_id(userid)
         group = self.admin.get_group_by_path(groupid)
         self.admin.group_user_add(kuid, group["id"])
