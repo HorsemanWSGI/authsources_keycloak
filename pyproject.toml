@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "authsources_keycloak"
+version = "0.1"
+authors = [
+    {name = "Souheil Chelfouh", email = "trollfot@gmail.com"},
+]
+requires-python = ">=3.11"
+classifiers = ["License :: OSI Approved :: MIT License"]
+dependencies = [
+  "authsources",
+  "python-keycloak",
+]
+
+[project.optional-dependencies]
+test = [
+    'pytest',
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["authsources_keycloak"]
+namespaces = false
