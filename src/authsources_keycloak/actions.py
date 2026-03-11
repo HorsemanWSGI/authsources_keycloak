@@ -13,7 +13,7 @@ class Fetch(actions.Getter):
             data = self.source.admin.get_user(kuid)
             groups = self.source.admin.get_user_groups(kuid)
             data['groups'] = groups
-            user = KeycloakUser(uid, data=data)
+            user = self.source.usertype(uid, data=data)
             return user
 
 
@@ -28,7 +28,7 @@ class Preflight(actions.Preflight):
         )
         if token := self.request.environ.get(env_token):
             token_info = self.source.decode_token(token=token)
-            user = KeycloakUser(
+            user = self.source.usertype(
                 token_info['preferred_username'],
                 data=token_info
             )
@@ -62,7 +62,7 @@ class Search(actions.Search):
             query={"max": limit, "first": index, **criterions}
         )
         for user in results:
-            yield KeycloakUser(user['username'], data=user)
+            yield self.source.usertype(user['username'], data=user)
 
 
 class Challenge(actions.Challenge):
@@ -100,7 +100,7 @@ class Challenge(actions.Challenge):
             return None
 
         token_info = self.source.decode_token(token["access_token"])
-        user = KeycloakUser(
+        user = self.source.usertype(
             credentials["username"],
             token_info,
         )
@@ -179,5 +179,57 @@ class Delete(actions.Delete):
     def delete(self, uid: UserID) -> bool:
         if kuid := self.source.admin.get_user_id(uid):
             self.source.admin.delete_user(user_id=kuid)
+            return True
+        return False
+
+
+class Groups(actions.Groups):
+
+    schema = None
+
+    def list_groups(self):
+        raise NotImplementedError('Not YET')
+
+    @abc.abstractmethod
+    def list_user_groups(self, userid: UserID):
+        kuid = self.source.admin.get_user_id(userid)
+        return self.source.admin.get_user_groups(user_id=kuid)
+
+
+class Group(actions.Group):
+
+    schema = None
+
+    def list_group_users(self, groupid: str):
+        group = self.source.admin.get_group_by_path(groupid)
+        group_members = self.source.admin.get_group_members(group["id"])
+        users = []
+        for data in group_members:
+            groups = self.user_groups(data['username'], kuid=data["id"])
+            data['groups'] = groups
+            yield self.source.factory(
+                id=data["username"],
+                metadata=None,
+                data=data,
+            )
+
+    def add_group_user(self, groupid, userid: UserID):
+            kuid = self.admin.get_user_id(userid)
+        group = self.admin.get_group_by_path(groupid)
+        self.admin.group_user_add(kuid, group["id"])
+
+
+
+class ChangePassword(actions.ChangePassword):
+
+    schema = None
+
+    def change_password(self, uid: t.Any, new_value: str):
+        if kuid := self.admin.get_user_id(uid):
+            self.source.admin.set_user_password(
+                user_id=kuid,
+                password=new_value,
+                temporary=True
+            )
             return True
         return False

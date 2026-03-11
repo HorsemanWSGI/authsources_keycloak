@@ -32,7 +32,8 @@ class KeycloakSource(source.Source):
                  connection: KeycloakOpenIDConnection,
                  *,
                  title: str,
-                 description: str):
+                 description: str,
+                 usertype: t.Type[KeycloakUser] = KeycloakUser):
         self.connector = connection.keycloak_openid
         self.admin = KeycloakAdmin(connection=connection)
         self.public_key = (
