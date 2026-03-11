@@ -1,10 +1,12 @@
+import typing as t
 from authsources.abc import source, actions
 from authsources.abc.protocols import RequestProtocol
 from authsources.json import JSONSchema
 from authsources_keycloak.source import KeycloakUser
 
 
-class Fetch(actions.Getter):
+class Fetch(source.SourceAction):
+    __protocols__ = (actions.Getter,)
 
     schema = None
 
@@ -17,7 +19,8 @@ class Fetch(actions.Getter):
             return user
 
 
-class Preflight(actions.Preflight):
+class Preflight(source.SourceAction):
+    __protocols__ = (actions.Preflight,)
 
     schema = None
 
@@ -34,7 +37,9 @@ class Preflight(actions.Preflight):
             return user
 
 
-class Search(actions.Search):
+class Search(source.SourceAction):
+
+    __protocols__ = (actions.Search,)
 
     schema = JSONSchema({
         "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -64,7 +69,9 @@ class Search(actions.Search):
             yield self.source.usertype(user['username'], data=user)
 
 
-class Challenge(actions.Challenge):
+class Challenge(source.SourceAction):
+
+    __protocols__ = (actions.Challenge,)
 
     schema = JSONSchema({
         "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -106,7 +113,9 @@ class Challenge(actions.Challenge):
         return user
 
 
-class Create(actions.Challenge):
+class Create(source.SourceAction):
+
+    __protocols__ = (actions.Create,)
 
     schema = JSONSchema({
         "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -141,7 +150,9 @@ class Create(actions.Challenge):
         return new_user
 
 
-class Update(actions.Update):
+class Update(source.SourceAction):
+
+    __protocols__ = (actions.Update,)
 
     schema = JSONSchema({
         "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -171,7 +182,9 @@ class Update(actions.Update):
         return False
 
 
-class Delete(actions.Delete):
+class Delete(source.SourceAction):
+
+    __protocols__ = (actions.Delete,)
 
     schema = None
 
@@ -182,20 +195,23 @@ class Delete(actions.Delete):
         return False
 
 
-class Groups(actions.Groups):
+class Groups(source.SourceAction):
+
+    __protocols__ = (actions.Groups,)
 
     schema = None
 
     def list_groups(self):
         raise NotImplementedError('Not YET')
 
-    @abc.abstractmethod
     def list_user_groups(self, userid: str):
         kuid = self.source.admin.get_user_id(userid)
         return self.source.admin.get_user_groups(user_id=kuid)
 
 
-class Group(actions.Group):
+class Group(source.SourceAction):
+
+    __protocols__ = (actions.Group,)
 
     schema = None
 
@@ -204,22 +220,20 @@ class Group(actions.Group):
         group_members = self.source.admin.get_group_members(group["id"])
         users = []
         for data in group_members:
-            groups = self.user_groups(data['username'], kuid=data["id"])
-            data['groups'] = groups
-            yield self.source.factory(
+            yield self.source.usertype(
                 id=data["username"],
-                metadata=None,
                 data=data,
             )
 
     def add_group_user(self, groupid: str, userid: str):
-            kuid = self.admin.get_user_id(userid)
+        kuid = self.admin.get_user_id(userid)
         group = self.admin.get_group_by_path(groupid)
         self.admin.group_user_add(kuid, group["id"])
 
 
+class ChangePassword(source.SourceAction):
 
-class ChangePassword(actions.ChangePassword):
+    __protocols__ = (actions.ChangePassword,)
 
     schema = None
 
