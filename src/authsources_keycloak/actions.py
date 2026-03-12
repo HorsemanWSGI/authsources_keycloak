@@ -10,7 +10,7 @@ class Fetch(source.SourceAction):
 
     schema = None
 
-    def get(self, request: RequestProtocol, uid: str) -> KeycloakUser | None:
+    def get(self, uid: str) -> KeycloakUser | None:
         if kuid := self.source.admin.get_user_id(uid):
             data = self.source.admin.get_user(kuid)
             groups = self.source.admin.get_user_groups(kuid)
@@ -24,11 +24,9 @@ class Preflight(source.SourceAction):
 
     schema = None
 
-    def preflight(self):
-        env_token = self.request.app.config.keycloak.get(
-            "header", "HTTP_ACCESS_TOKEN"
-        )
-        if token := self.request.environ.get(env_token):
+    def preflight(self, request: RequestProtocol):
+        env_token = self.source.config.get("header", "HTTP_ACCESS_TOKEN")
+        if token := request.environ.get(env_token):
             token_info = self.source.decode_token(token=token)
             user = self.source.usertype(
                 token_info['preferred_username'],
@@ -174,7 +172,7 @@ class Update(source.SourceAction):
             return None
 
         if kuid := self.source.admin.get_user_id(uid):
-            self.admin.update_user(
+            self.source.admin.update_user(
                 user_id=kuid,
                 payload=data
             )
@@ -226,9 +224,10 @@ class Group(source.SourceAction):
             )
 
     def add_group_user(self, groupid: str, userid: str):
-        kuid = self.admin.get_user_id(userid)
-        group = self.admin.get_group_by_path(groupid)
-        self.admin.group_user_add(kuid, group["id"])
+        kuid = self.source.admin.get_user_id(userid)
+        group = self.source.admin.get_group_by_path(groupid)
+        breakpoint()
+        self.source.admin.group_user_add(kuid, group["id"])
 
 
 class ChangePassword(source.SourceAction):
@@ -238,7 +237,7 @@ class ChangePassword(source.SourceAction):
     schema = None
 
     def change_password(self, uid: t.Any, new_value: str):
-        if kuid := self.admin.get_user_id(uid):
+        if kuid := self.source.admin.get_user_id(uid):
             self.source.admin.set_user_password(
                 user_id=kuid,
                 password=new_value,
