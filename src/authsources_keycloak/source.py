@@ -3,10 +3,10 @@
 import typing as t
 from keycloak import KeycloakOpenID, KeycloakAdmin, KeycloakOpenIDConnection
 from keycloak.exceptions import KeycloakAuthenticationError
-from authsources.abc import source, actions
-from authsources.abc.identity import User, UserID
+from authsources.source import Source, SourceAction
+from authsources.identity import User, UserID
 from authsources.json import JSONSchema
-from authsources.abc.protocols import RequestProtocol
+from authsources.protocols import RequestProtocol
 
 
 class KeycloakData(t.TypedDict, total=False):
@@ -23,7 +23,7 @@ class KeycloakUser(User):
         self.data = data
 
 
-class KeycloakSource(source.Source):
+class KeycloakSource(Source):
 
     admin: KeycloakAdmin
     connector: KeycloakOpenID
@@ -37,7 +37,7 @@ class KeycloakSource(source.Source):
                  usertype: t.Type[KeycloakUser] = KeycloakUser,
                  config: dict | None = None,
                  bindings: t.Mapping | None = None,
-                 actions: t.Iterable[source.SourceAction] | None = None):
+                 actions: t.Iterable[SourceAction] | None = None):
         self.connector = connection.keycloak_openid
         self.admin = KeycloakAdmin(connection=connection)
         self.public_key = (
