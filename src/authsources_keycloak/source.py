@@ -27,16 +27,17 @@ class KeycloakSource(source.Source):
 
     admin: KeycloakAdmin
     connector: KeycloakOpenID
+    config: dict
 
     def __init__(self,
                  connection: KeycloakOpenIDConnection,
                  *,
                  title: str,
                  description: str,
-                 usertype: type[KeycloakUser] = KeycloakUser,
-                 actions: t.Iterable[source.SourceAction] | None = None,
-                 bindings: t.Mapping | None = None
-                 ):
+                 usertype: t.Type[KeycloakUser] = KeycloakUser,
+                 config: dict | None = None,
+                 bindings: t.Mapping | None = None,
+                 actions: t.Iterable[source.SourceAction] | None = None):
         self.connector = connection.keycloak_openid
         self.admin = KeycloakAdmin(connection=connection)
         self.public_key = (
@@ -47,6 +48,8 @@ class KeycloakSource(source.Source):
         self.title = title
         self.description = description
         self.bindings = bindings if bindings is not None else {}
+        self.usertype = usertype
+        self.config = config if config is not None else {}
         self.define(actions)
 
     def decode_token(self, token: str):

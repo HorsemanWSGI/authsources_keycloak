@@ -1,7 +1,9 @@
+import pytest
 from authsources_keycloak.source import KeycloakSource
 from authsources_keycloak import actions as keycloak_actions
 from authsources.abc.actions import Create, Getter
 from keycloak.keycloak_admin import KeycloakAdmin
+from authsources.json import ValidationErrors
 
 
 def test_source(connection):
@@ -24,6 +26,9 @@ def test_source_create(connection):
         )
     )
 
-    create = source[Create]
-    assert create is not None
-    assert create({})
+    assert Create in source
+
+    action = source[Create]
+    assert action is not None
+    with pytest.raises(ValidationErrors) as exc:
+        action.create({})
