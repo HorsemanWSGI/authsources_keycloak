@@ -13,7 +13,7 @@ class Fetch(actions.Getter):
             data = self.source.admin.get_user(kuid)
             groups = self.source.admin.get_user_groups(kuid)
             data['groups'] = groups
-            user = KeycloakUser(uid, data=data)
+            user = self.source.usertype(uid, data=data)
             return user
 
 
@@ -28,7 +28,7 @@ class Preflight(actions.Preflight):
         )
         if token := self.request.environ.get(env_token):
             token_info = self.source.decode_token(token=token)
-            user = KeycloakUser(
+            user = self.source.usertype(
                 token_info['preferred_username'],
                 data=token_info
             )
@@ -62,7 +62,7 @@ class Search(actions.Search):
             query={"max": limit, "first": index, **criterions}
         )
         for user in results:
-            yield KeycloakUser(user['username'], data=user)
+            yield self.source.usertype(user['username'], data=user)
 
 
 class Challenge(actions.Challenge):
@@ -100,7 +100,7 @@ class Challenge(actions.Challenge):
             return None
 
         token_info = self.source.decode_token(token["access_token"])
-        user = KeycloakUser(
+        user = self.source.usertype(
             credentials["username"],
             token_info,
         )

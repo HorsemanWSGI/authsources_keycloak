@@ -1,0 +1,33 @@
+volumes:
+  postgres_data:
+    driver: local
+
+services:
+  postgres:
+    image: postgres
+    environment:
+      POSTGRES_DB: testkeycloakdb
+      POSTGRES_USER: testkeycloakuser
+      POSTGRES_PASSWORD: testkeycloakpassword
+    restart:
+      always
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.1
+    volumes:
+      - ./export:/opt/keycloak/data/import
+    command: ["start-dev", "--import-realm"]
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres/testkeycloakdb
+      KC_DB_USERNAME: testkeycloakuser
+      KC_DB_PASSWORD: testkeycloakpassword
+      KC_BOOTSTRAP_ADMIN_USERNAME: keycloakuser
+      KC_BOOTSTRAP_ADMIN_PASSWORD: keycloakpassword
+      KEYCLOAK_LOGLEVEL: DEBUG
+    ports:
+      - '8085:8080'
+    depends_on:
+      - postgres
+    restart:
+      always

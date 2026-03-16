@@ -32,7 +32,11 @@ class KeycloakSource(source.Source):
                  connection: KeycloakOpenIDConnection,
                  *,
                  title: str,
-                 description: str):
+                 description: str,
+                 usertype: type[KeycloakUser] = KeycloakUser,
+                 actions: t.Iterable[source.SourceAction] | None = None,
+                 bindings: t.Mapping | None = None
+                 ):
         self.connector = connection.keycloak_openid
         self.admin = KeycloakAdmin(connection=connection)
         self.public_key = (
@@ -42,6 +46,8 @@ class KeycloakSource(source.Source):
         )
         self.title = title
         self.description = description
+        self.bindings = bindings if bindings is not None else {}
+        self.define(actions)
 
     def decode_token(self, token: str):
         return self.connector.decode_token(

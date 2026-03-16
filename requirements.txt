@@ -1,0 +1,2 @@
+-e git+ssh://git@github.com/HorsemanWSGI/authsources.git#egg=authsources
+-e .[test]
