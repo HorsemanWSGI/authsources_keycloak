@@ -87,11 +87,7 @@ class Challenge(source.SourceAction):
     })
 
     def challenge(self, credentials: dict) -> KeycloakUser | None:
-        errors = list(self.schema.validate(credentials))
-        if errors:
-            # FixMe
-            return None
-
+        self.schema.validate(credentials)
         try:
             token = self.source.connector.token(
                 credentials["username"],
@@ -160,11 +156,7 @@ class Update(source.SourceAction):
     })
 
     def update(self, uid: str, data: dict) -> bool:
-        errors = list(self.schema.validate(data))
-        if errors:
-            # FixMe
-            return None
-
+        self.schema.validate(data)
         if kuid := self.source.admin.get_user_id(uid):
             self.source.admin.update_user(
                 user_id=kuid,
