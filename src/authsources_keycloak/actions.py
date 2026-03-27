@@ -25,7 +25,7 @@ class Preflight(source.SourceAction):
 
     def preflight(self, request: protocols.RequestProtocol):
         env_token = self.source.config.get("header", "HTTP_ACCESS_TOKEN")
-        if token := request.environ.get(env_token):
+        if token := request.headers.get(env_token):
             token_info = self.source.decode_token(token=token)
             user = self.source.usertype(
                 token_info['preferred_username'],
