@@ -14,6 +14,14 @@ def test_source(connection):
         description="Test Keycloak Source"
     )
     assert isinstance(source.admin, KeycloakAdmin)
+    assert source.bindings == {}
+    assert source.config == {}
+    assert source.public_key.startswith("-----BEGIN PUBLIC KEY-----\n")
+
+    bound = source.bind(request="Whatever")
+    assert bound.bindings == {"request": "Whatever"}
+    assert bound.config is source.config
+    assert bound.publicèkey is source.public_key
 
 
 def test_source_create_delete(connection):

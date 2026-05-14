@@ -28,6 +28,7 @@ class KeycloakSource(Source):
     admin: KeycloakAdmin
     connector: KeycloakOpenID
     config: dict
+    public_key: str
 
     def __init__(self,
                  connection: KeycloakOpenIDConnection,
@@ -40,17 +41,19 @@ class KeycloakSource(Source):
                  actions: t.Iterable[SourceAction] | None = None):
         self.connector = connection.keycloak_openid
         self.admin = KeycloakAdmin(connection=connection)
+        self.config = config if config is not None else {}
         self.public_key = (
             "-----BEGIN PUBLIC KEY-----\n"
             + self.connector.public_key()
             + "\n-----END PUBLIC KEY-----"
         )
-        self.title = title
-        self.description = description
-        self.bindings = bindings if bindings is not None else {}
-        self.usertype = usertype
-        self.config = config if config is not None else {}
-        self.define(actions)
+        super().__init__(
+            title=title,
+            description=description,
+            bindings=bindings,
+            usertype=usertype,
+            actions=actions
+        )
 
     def decode_token(self, token: str):
         return self.connector.decode_token(
