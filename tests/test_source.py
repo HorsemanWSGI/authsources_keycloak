@@ -21,7 +21,7 @@ def test_source(connection):
     bound = source.bind(request="Whatever")
     assert bound.bindings == {"request": "Whatever"}
     assert bound.config is source.config
-    assert bound.publicèkey is source.public_key
+    assert bound.public_key is source.public_key
 
 
 def test_source_create_delete(connection):
