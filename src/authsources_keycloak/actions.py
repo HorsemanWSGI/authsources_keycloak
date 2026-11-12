@@ -1,6 +1,9 @@
+import json
 import typing as t
 from authsources import source, protocols
+from authsources.errors import MagicLinkError, UserExists
 from authsources.json import JSONSchema
+from keycloak.exceptions import KeycloakPostError
 from authsources_keycloak.source import KeycloakUser
 
 
@@ -134,7 +137,17 @@ class Create(source.SourceAction):
         self.schema.validate(data)
         pwd = data.pop("password")
         data["credentials"] = [{"value": pwd, "type": "password"}]
-        new_user = self.source.admin.create_user(data, exist_ok=False)
+        try:
+            self.source.admin.create_user(data, exist_ok=False)
+        except KeycloakPostError as exc:
+            # 409 "User exists with same username/email".
+            if exc.response_code == 409:
+                body = exc.response_body or b""
+                if isinstance(body, bytes):
+                    body = body.decode("utf-8", "replace")
+                field = "email" if "email" in body.lower() else "username"
+                raise UserExists(field) from exc
+            raise
         return True
 
 
@@ -276,3 +289,44 @@ class ChangePassword(source.SourceAction):
             )
             return True
         return False
+
+
+class MagicLink(source.SourceAction):
+    """Magic links through the ``keycloak-magic-link`` extension, that
+    needs to be deployed on the Keycloak server.
+
+    The link logs into the client of the source's connection.
+    """
+
+    __protocols__ = (protocols.MagicLink,)
+
+    schema = None
+    ttl: int = 604800  # seconds, used when the caller gives none.
+
+    def create_magic_link(
+            self, email: str, redirect_uri: str, *,
+            ttl: int | None = None) -> str:
+        conn = self.source.admin.connection
+        payload = {
+            "email": email,
+            "client_id": conn.client_id,
+            "redirect_uri": redirect_uri,
+            "expiration_seconds": self.ttl if ttl is None else ttl,
+            "force_create": False,  # The user must exist.
+            "send_email": False,    # The caller delivers the link.
+        }
+        # Through the admin connection: it fetches the token on first use
+        # and refreshes an expired one.
+        response = conn.raw_post(
+            f"realms/{conn.realm_name}/magic-link", data=json.dumps(payload))
+        if response.status_code != 200:
+            raise self.error(response)
+        return response.json()["link"]
+
+    @staticmethod
+    def error(response) -> MagicLinkError:
+        try:
+            message = response.json().get("error") or response.text
+        except (ValueError, AttributeError):
+            message = response.text
+        return MagicLinkError(message, response.status_code)

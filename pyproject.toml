@@ -11,7 +11,7 @@ authors = [
 requires-python = ">=3.11"
 classifiers = ["License :: OSI Approved :: MIT License"]
 dependencies = [
-  "authsources",
+  "authsources > 0.4",
   "python-keycloak",
 ]
 
