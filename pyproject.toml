@@ -4,14 +4,14 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "authsources_keycloak"
-version = "0.3"
+version = "0.4.dev0"
 authors = [
     {name = "Souheil Chelfouh", email = "trollfot@gmail.com"},
 ]
 requires-python = ">=3.11"
 classifiers = ["License :: OSI Approved :: MIT License"]
 dependencies = [
-  "authsources",
+  "authsources >= 0.5.dev0",
   "python-keycloak",
 ]
 
